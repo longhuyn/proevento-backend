@@ -139,7 +139,7 @@ class ProfileTagAPI(Resource):
 
             with sqlite3.connect("database.db") as con:
                 cur = con.cursor()
-                cur.execute("UPDATE Profile SET tags = ?", (tags,))
+                cur.execute("UPDATE Profile SET tags = ? WHERE userId = ?", (tags, userId))
                 msg = "Sucessfully added tags to the database"
                 return msg, 200
 
