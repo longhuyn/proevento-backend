@@ -37,13 +37,16 @@ class EventNotificationAPI(Resource):
 	def get(self, recipientId):
 		try:
 			with sqlite3.connect("database.db") as con:
+	
 				cur = con.cursor()
-				cur.execute("SELECT * FROM EventNotification WHERE recipientId = ?", (recipientId,))
+				cur.execute("SELECT * FROM EventNotification WHERE recipientId = ? ORDER BY date DESC", (recipientId,))
+			
 				rows = cur.fetchall()
 				results = []
 				for row in rows:
 					results.append(dictFactory(cur, row))
 				cur.close()
+		
 				return results, 200
 		except sqlite3.Error as err:
 			print(str(err))

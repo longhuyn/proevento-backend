@@ -158,10 +158,9 @@ class DateSearchAPI(Resource):
         try:
             with sqlite3.connect("database.db") as con:
                 cur = con.cursor()
-                cur.execute("SELECT eventId FROM Event WHERE date LIKE ?", ("%"+searchText+"%",))
+                cur.execute("SELECT eventId FROM Event WHERE type = 0 AND date LIKE ?", ("%"+searchText+"%",))
                 con.commit()
                 rows = cur.fetchall()
-                print(rows)
                 results = []
                 if (rows):
                     for row in rows:
