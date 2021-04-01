@@ -3,7 +3,7 @@ import json
 """JWT authorization tokens will need to make a new one every week"""
 
 headers = {
-	'authorization': "Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhdWQiOm51bGwsImlzcyI6IlRYaHlmbTVxUjhpM0VNblo4RVFVb0EiLCJleHAiOjE2MTY4OTc3MTcsImlhdCI6MTYxNjI5MjkxN30.tCWk0AUpqU5DcZKBwqcH2KzPSKc8ACEohFzaID2ERII",
+	'authorization': "Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhdWQiOm51bGwsImlzcyI6IlRYaHlmbTVxUjhpM0VNblo4RVFVb0EiLCJleHAiOjE2MjA3MDI3MjAsImlhdCI6MTYxNjk4MjE1OH0.dW-EaSdk81QHbK6JITmCbDgRiqC3NRMC9QAW8IDe_-4",
 	'content-type': "application/json"
 }
 

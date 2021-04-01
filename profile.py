@@ -11,7 +11,7 @@ class ProfileAPI(Resource):
         try:
             with sqlite3.connect("database.db") as con:
                 cur = con.cursor()
-                cur.execute("SELECT * from Profile WHERE userId = ?", (userId))
+                cur.execute("SELECT * from Profile WHERE userId = ?", (userId,))
                 rows = cur.fetchone()
                 if (rows == None):
                     return {"error": "UserId doesn't exist"}, 400

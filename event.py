@@ -30,6 +30,7 @@ class GetEventAPI(Resource):
 
     def get(self, eventId):
         result = getEvent(eventId)
+        print(result)
         if "error" in result:
             msg = "Unable to get event with id " + eventId
             return {"error": msg}, 400
@@ -44,7 +45,7 @@ def getEvent(eventId):
             cur.execute("SELECT * from Event WHERE eventId = ?", (eventId,))
             rows = cur.fetchone()
             if (rows == None):
-                return {"error": "eventId does not exist"}, 400
+                return {"error": "eventId does not exist"}
             rows = dictFactory(cur, rows)
             rows["tags"] = json.loads(rows["tags"])
             rows["participants"] = json.loads(rows["participants"])
@@ -145,4 +146,3 @@ class GetPublicEventsAPI(Resource):
             print(str(err))
             msg = "Unable to create event"
             return {"error": msg}, 400
-
