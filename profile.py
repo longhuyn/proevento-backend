@@ -62,11 +62,21 @@ class ProfileFollowAPI(Resource):
                         following.append(userId)
                         cur.execute("UPDATE Profile SET following = ? WHERE userId = ?",
                                 (json.dumps(following), followerId))
+                        # send notification
+
+                        # this line causes an error so i commented it  out
+                        # followerNotification(userId, followerId) 
                         msg += " and updated following list"
                     else:
                         msg = "User already exists in the following database"
                         return {"error" :msg}, 400
-                        
+                    
+                    cur.execute("SELECT * FROM UserChat WHERE (user1 = ? AND user2 = ?) OR (user1 = ? AND user2 = ?)",
+                                (userId, followerId, followerId, userId))
+                    res = cur.fetchone()
+                    if (res == None):
+                        cur.execute("INSERT INTO UserChat (user1, user2) VALUES (?, ?)", (userId, followerId))    
+                    
                     return {"msg" :msg}, 200
 
                 else:

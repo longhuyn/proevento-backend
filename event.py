@@ -84,9 +84,9 @@ class CreateEventAPI(Resource):
                 cur.execute("SELECT email from User where userId = ?", (userId,))
                 email = cur.fetchone()[0]
                 joinurl = create_meeting(email)
-                cur.execute("INSERT INTO Event (userId, eventName, description, tags, participants, type, date, zoomLink, favorites, eventImage) \
-                                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", 
-                                (userId, eventName, description, tags, participants, eventType, date, joinurl, favorites, eventImage))
+                cur.execute("INSERT INTO Event (userId, eventName, description, tags, participants, type, date, zoomLink, favorites, eventImage, numParticipate) \
+                                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", 
+                                (userId, eventName, description, tags, participants, eventType, date, joinurl, favorites, eventImage, 0))
                 con.commit()
                 eventId = cur.lastrowid
                 cur.close() 
@@ -145,4 +145,39 @@ class GetPublicEventsAPI(Resource):
         except sqlite3.Error as err:
             print(str(err))
             msg = "Unable to create event"
+            return {"error": msg}, 400
+                
+
+class AddParticipantAPI(Resource):
+    def post(self, eventId, userId):
+        try:
+            with sqlite3.connect("database.db") as con:
+                cur = con.cursor()
+                cur.execute("SELECT * FROM Event WHERE eventId = ?", (eventId,))
+                rows = cur.fetchone()
+                oldParticipants = rows["participants"]
+                oldNumParticipate = rows["numParticipate"]
+                cur.execute("UPDATE Event SET participants = ? WHERE eventId = ?", (oldParticipants + "userId,", eventId))
+                cur.execute("UPDATE Event SET numParticipate = ? WHERE eventId = ?", (oldNumParticipate + 1, eventId))    
+                return {"msg": "Successfully added participant"}, 200
+
+        except sqlite3.Error as err:
+            print(str(err))
+            msg = "Server Error"
+            return {"error": msg}, 400
+
+class TopTenAPI(Resource):
+    def get(self):
+        try:
+            with sqlite3.connect("database.db") as con:
+                cur = con.cursor()
+                cur.execute("SELECT * FROM Event ORDER BY numParticipate DESC")
+                rows = cur.fetchall()
+                results = []
+                for x in range(10):
+                    results.append(getEvent(row[0]))
+                return results, 200
+        except sqlite3.Error as err:
+            print(str(err))
+            msg = "Server Error"
             return {"error": msg}, 400

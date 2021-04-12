@@ -1,8 +1,9 @@
 DROP TABLE IF EXISTS User;
 DROP TABLE IF EXISTS Profile;
 DROP TABLE IF EXISTS Event;
-DROP TABLE IF EXISTS FollowNotification;
-DROP TABLE IF EXISTS EventNotification;
+DROP TABLE IF EXISTS Notification;
+DROP TABLE IF EXISTS ChatRoom;
+DROP TABLE IF EXISTS ChatMessage;
 
 CREATE TABLE User (
   userId INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -22,9 +23,10 @@ CREATE TABLE Event (
   participants TEXT,
   favorites TEXT,
   type TEXT NOT NULL,
-  date TEXT NOT NULL,
   zoomLink TEXT NOT NULL,
-  eventImage TEXT NOT NULL
+  eventImage TEXT NOT NULL,
+  date TEXT NOT NULL,
+  numParticipate INTEGER NOT NULL
 );
 
 CREATE TABLE Profile (
@@ -35,22 +37,32 @@ CREATE TABLE Profile (
   following TEXT
 );
 
-CREATE TABLE FollowNotification (
+CREATE TABLE Notification (
   notificationId INTEGER PRIMARY KEY AUTOINCREMENT,
   recipientId INTEGER NOT NULL,
-  status TEXT NOT NULL,
+  type TEXT NOT NULL,
   date TEXT NOT NULL,
-  output TEXT NOT NULL,
-  followerId INTEGER
+  eventId INTEGER,
+  userId INTEGER,
+  groupId INTEGER
 );
 
-CREATE TABLE EventNotification (
-  notificationId INTEGER PRIMARY KEY AUTOINCREMENT,
-  eventId INTEGER NOT NULL,
-  recipientId INTEGER NOT NULL,
-  date TEXT NOT NULL,
-  description TEXT NOT NULL,
-  joinurl TEXT NOT NULL,
-  eventName TEXT NOT NULL,
-  userId TEXT NOT NULL
+CREATE TABLE UserChat (
+  roomId INTEGER PRIMARY KEY AUTOINCREMENT,
+  user1 INTEGER NOT NULL,
+  user2 INTEGER NOT NULL
+);
+
+CREATE TABLE GroupChat (
+  roomId INTEGER PRIMARY KEY AUTOINCREMENT,
+  groupId INTEGER NOT NULL
+);
+
+CREATE TABLE ChatMessage (
+  messageId INTEGER PRIMARY KEY AUTOINCREMENT,
+  roomId INTEGER NOT NULL,
+  userId INTEGER NOT NULL,
+  message TEXT NOT NULL,
+  chatType INTEGER, /* 0 for user_chat, 1 for group_chat*/
+  date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );

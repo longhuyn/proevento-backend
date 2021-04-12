@@ -24,7 +24,7 @@ def test_getting_invalid_eventId_with_character():
 # Test 3: inserting a valid event
 def test_creating_new_event():
     payload = {
-        "userId": 9,
+        "userId": 1,
         "eventName": "PyTest Event",
         "description": "PyTest Description",
         "tags": [
@@ -32,21 +32,22 @@ def test_creating_new_event():
             "tag2"
         ],
         "eventImage": "https://images-na.ssl-images-amazon.com/images/I/614oJ8yhdKL._AC_SX466_.jpg",
-        "participants": [1, 2, 3],
+        "participants": [1, 2],
         "type": 0,
         "date": "2021-03-17T19:58"
     }
     r = requests.post('http://proevento.tk:3000/event/create_event', data=json.dumps(payload), headers=headers)
     if (r.status_code != 200):
         assert r.status_code != 200
+    print(r)
     results = json.loads(r.text)
     r = requests.get('http://proevento.tk:3000/event/' + str(results["eventId"]))
     results = json.loads(r.text)
     assert r.status_code == 200 and \
-            results["userId"] == 9 and \
+            results["userId"] == 1 and \
             results["eventName"] == "PyTest Event" and \
             results["description"] == "PyTest Description" and \
-            results["participants"] == [1, 2, 3] and \
+            results["participants"] == [1, 2] and \
             results["type"] == "0"
 
 #Test 4: inserting an event with invalid user id
@@ -60,7 +61,7 @@ def test_new_event_invalid_id():
             "tag2"
         ],
         "eventImage": "https://images-na.ssl-images-amazon.com/images/I/614oJ8yhdKL._AC_SX466_.jpg",
-        "participants": [1, 2, 3],
+        "participants": [1, 2],
         "type": 0,
         "date": "2021-03-17T19:58"
     }
@@ -70,7 +71,7 @@ def test_new_event_invalid_id():
 #Test 5: inserting an event with no date
 def test_new_event_no_date():
     payload = {
-        "userId": 999,
+        "userId": 1,
         "eventName": "PyTest Event 2",
         "description": "PyTest Description",
         "tags": [
@@ -78,7 +79,7 @@ def test_new_event_no_date():
             "tag2"
         ],
         "eventImage": "https://images-na.ssl-images-amazon.com/images/I/614oJ8yhdKL._AC_SX466_.jpg",
-        "participants": [1, 2, 3],
+        "participants": [1, 2],
         "type": 0,
         "date": ""
     }
@@ -96,7 +97,7 @@ def test_new_event_empty_name():
             "tag2"
         ],
         "eventImage": "https://images-na.ssl-images-amazon.com/images/I/614oJ8yhdKL._AC_SX466_.jpg",
-        "participants": [1, 2, 3],
+        "participants": [1, 2],
         "type": 0,
         "date": "2021-03-17T19:58"
     }

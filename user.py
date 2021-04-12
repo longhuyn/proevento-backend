@@ -48,6 +48,24 @@ class UserAPI(Resource):
             msg = "Unable to edit user's data for userId " + userId
             return {"error": msg}, 400
 
+class UserDeleteAPI(Resource):
+    def post(self, userId):
+        try:
+             with sqlite3.connect("database.db") as con:
+                cur = con.cursor()
+                cur.execute("DELETE FROM User Where userId = ?", (userId,))
+                con.commit()
+                cur.execute("DELETE FROM Event Where userId = ?", (userId,))
+                con.commit()
+                cur.execute("DELETE FROM Profile Where userId = ?", (userId,))
+                con.commit()
+                cur.execute("DELETE FROM EventNotification Where userId = ?", (userId,))
+                con.commit()
+                return{"msg": "Successfully deleted user's data"},200
+        except sqlite3.Error as err:
+            msg = "Unable to edit user's data for userId " + userId
+            return {"error": msg}, 400
+            
 class UserCreateAPI(Resource):
 
     def post(self):
