@@ -3,6 +3,7 @@ from flask import Flask, request
 from flask_restful import Resource, Api
 import sqlite3
 from util import *
+from chat import getUser
 
 class EventSearchAPI(Resource):
 
@@ -46,6 +47,32 @@ def getEvent(eventId):
     except sqlite3.Error as err:
         print(str(err))
         msg = "Unable to get event with id " + eventId
+        return {"error": msg}
+
+def getGroup(groupId):
+    try:
+        with sqlite3.connect("database.db") as con:
+            cur = con.cursor()
+            cur.execute("SELECT * from UserGroup WHERE groupId = ?", (groupId,))
+            rows = cur.fetchone()
+            if (rows == None):
+                return {"error": "groupId does not exist"}, 400
+            rows = dictFactory(cur, rows)
+            users = []
+            rows["categories"] = json.loads(rows["categories"])
+            rows["participants"] = json.loads(rows["participants"])
+            cur.execute("SELECT * FROM User WHERE userId = ?", (rows["ownerId"],))
+            ownerData = cur.fetchone()
+            ownerData = dictFactory(cur, ownerData)
+            rows["owner"] = ownerData
+            for user in rows["participants"]:
+                users.append(getUser(user))
+            rows["participants"] = users
+            return rows
+
+    except sqlite3.Error as err:
+        print(str(err))
+        msg = "Unable to get group with id " + groupId
         return {"error": msg}
 
 class UserSearchAPI(Resource):
@@ -152,6 +179,8 @@ class SingleEventSearchAPI(Resource):
             msg = "Unable to perform the search"
             return {"error": msg}, 400
 
+
+
 class DateSearchAPI(Resource):
 
     def get(self, searchText):
@@ -173,3 +202,88 @@ class DateSearchAPI(Resource):
             msg = "Unable to perform the search"
             return {"error": msg}, 400
 
+# class EventSearchAPI(Resource):
+
+#     def get(self, searchText):
+    
+#         try:
+#             with sqlite3.connect("database.db") as con:
+#                 cur = con.cursor()
+#                 cur.execute("SELECT * FROM Event WHERE type = 0 AND eventName LIKE ?", ("%"+searchText+"%",))
+#                 rows = cur.fetchall()
+#                 results = []
+#                 if (rows):
+#                     for row in rows:
+#                         results.append(getEvent(row[0]))
+#                 return results, 200
+                
+#         except sqlite3.Error as err:
+#             print(str(err))
+#             msg = "Unable to perform the search"
+#             return {"error": msg}, 400
+            
+class GroupNameSearchAPI(Resource):
+    def get(self, searchText):
+        try:
+            with sqlite3.connect("database.db") as con:
+                cur = con.cursor()
+                cur.execute("SELECT * FROM UserGroup WHERE name LIKE ?", ("%"+searchText+"%",))
+                rows = cur.fetchall()
+                results = []
+                if (rows):
+                    for row in rows:
+                        results.append(getGroup(row[0]))
+                        #results.append(dictFactory(cur, row))
+                return results, 200
+                
+        except sqlite3.Error as err:
+            print(str(err))
+            msg = "Unable to perform the search"
+            return {"error": msg}, 400
+
+class GroupCategorySearchAPI(Resource):
+    def get(self, searchText):
+        try:
+            with sqlite3.connect("database.db") as con:
+                cur = con.cursor()
+                splitText = searchText.split(',')
+                results = []
+                for category in splitText:
+                    cur.execute("SELECT * FROM UserGroup WHERE categories LIKE ?", ("%"+category+"%",))
+                    con.commit()
+                    rows = cur.fetchall()
+                    if (rows):
+                        for row in rows:
+                            if dictFactory(cur, row) not in results:
+                                results.append(getGroup(row[0]))
+                cur.close()
+                return results, 200
+                
+        except sqlite3.Error as err:
+            print(str(err))
+            msg = "Unable to perform the search"
+            return {"error": msg}, 400
+
+        # try:
+        #     with sqlite3.connect("database.db") as con:
+        #         cur = con.cursor()
+        #         cur.execute("SELECT * FROM UserGroup WHERE name = ?", ("%"+searchText+"%",))
+        #         res = cur.fetchone()
+        #         if (res == None):
+        #             return {"err": "Unable to find a group with name " + searchText}, 400
+        #         res = dictFactory(cur, res)
+        #         users = []
+        #         res["participants"] = json.loads(res["participants"])
+        #         res["categories"] = json.loads(res["categories"])
+        #         res["owner"] = getUser(res["ownerId"])
+
+        #         for user in res["participants"]:
+        #             users.append(getUser(user))
+        #         res["participants"] = users
+
+        #         return res, 200
+
+        # except sqlite3.Error as err:
+        #     print(str(err))
+        #     msg = "Unable to get the group with id " + groupId
+        #     return {"error": msg}, 400

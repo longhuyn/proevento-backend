@@ -9,6 +9,8 @@ from event import *
 from notification import *
 from search import *
 from chat import *
+from user_group import *
+from category import *
 from flask_socketio import join_room, leave_room, SocketIO, send, emit
 
 app = Flask(__name__)
@@ -27,6 +29,7 @@ api.add_resource(ProfileTagAPI, '/profile/tag/<userId>')
 api.add_resource(ProfileFollowAPI, '/profile/follow/<userId>')
 api.add_resource(viewFollowAPI, '/profile/viewFollow/<userId>') #might need to add true false param here
 api.add_resource(checkFollowAPI, '/profile/checkFollow/<userId>')
+api.add_resource(ProfileBioAPI, '/profile/bio/<userId>')
 
 # Event APIS
 api.add_resource(GetEventAPI, '/event/<eventId>')
@@ -43,19 +46,29 @@ api.add_resource(FollowNotificationAPI, '/notification/follow/<userId>/<recipien
 api.add_resource(EventNotificationAPI, '/notification/event/<recipientId>')
 api.add_resource(CancelNotificationAPI, '/notification/cancel/<eventId>')
 
-
 # Search APIS
 api.add_resource(EventSearchAPI, '/search/event/<searchText>')
 api.add_resource(UserSearchAPI, '/search/user/<searchText>')
 api.add_resource(TagSearchAPI, '/search/tags/<searchText>')
 api.add_resource(DateSearchAPI, '/search/date/<searchText>')
+api.add_resource(GroupNameSearchAPI, '/search/groupName/<searchText>')
+api.add_resource(GroupCategorySearchAPI, '/search/groupCategory/<searchText>')
 api.add_resource(SingleUserSearchAPI, '/search/single/<searchText>')
 api.add_resource(SingleEventSearchAPI, '/search/single_event/<searchText>')
 api.add_resource(SingleUserIdSearchAPI, '/search/singleid/<searchText>')
 
+# Group APIS
+api.add_resource(CreateGroupAPI, '/group/create_group/<userId>')
+api.add_resource(GetGroupAPI, '/group/<groupId>')
+api.add_resource(GetAllGroupsAPI, '/group/all')
+
 # Chat APIS
 api.add_resource(GetUserChatRoom, '/chat/user_chat/<userId>')
+api.add_resource(GetGroupChatRoom, '/chat/group_chat/<userId>')
 api.add_resource(GetChatMessages, '/chat/chat_messages/<chatType>/<roomId>')
+
+# Category APIS
+api.add_resource(GetAllCategories, '/category')
 
 # Socketio to handle live chat 
 @socketio.on('send_message')

@@ -26,7 +26,7 @@ class UserAPI(Resource):
 
     def put(self, userId):
         try:
-            data = request.get_json(force=True)
+            data = request.get_json()
             print(userId)
             name = data["fullName"]
             profileImage = data['profileImage']
@@ -82,7 +82,7 @@ class UserCreateAPI(Resource):
                 rows = cur.fetchone()
                 if (rows != None):
                     rows = dictFactory(cur, rows)
-                    return {"userId": rows["userId"]}, 200
+                    return {"userId": rows["userId"], "first": False}, 200
 
                 cur.execute("INSERT INTO User (fullName, username, email, profileImage) VALUES (?,?,?,?)",
                             (fullName, username, email, profileImage))
@@ -93,7 +93,7 @@ class UserCreateAPI(Resource):
                     "INSERT INTO Profile (userId, followers, following, tags) VALUES (?, '[]', '[]', '[]')", (userId,))
                 name = fullName.split(" ")
                 zoomAPI.add_user(name[0], name[1], email)
-                return {"msg": "Sucessfully added new user to the database", "userId": userId}, 200
+                return {"msg": "Sucessfully added new user to the database", "userId": userId, "first": True}, 200
 
         except sqlite3.Error as err:
             print(str(err))

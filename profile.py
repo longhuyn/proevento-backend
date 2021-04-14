@@ -157,3 +157,21 @@ class ProfileTagAPI(Resource):
             print(str(err))
             msg = "Failed to add tags"
             return msg, 400
+
+class ProfileBioAPI(Resource):
+
+    def post(self, userId):
+        try:
+            data = request.get_json()
+            bio = data['bio']
+
+            with sqlite3.connect("database.db") as con:
+                cur = con.cursor()
+                cur.execute("UPDATE Profile SET bio = ? WHERE userId = ?", (bio, userId))
+                msg = "Sucessfully added bio to the database"
+                return msg, 200
+
+        except sqlite3.Error as err:
+            print(str(err))
+            msg = "Failed to add bio"
+            return msg, 400

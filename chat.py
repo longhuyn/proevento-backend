@@ -3,14 +3,7 @@ from flask import Flask, request
 from flask_restful import Resource, Api
 import sqlite3
 from util import *
-
-def getUser(userId):
-    with sqlite3.connect("database.db") as con:
-        cur = con.cursor()
-        cur.execute("SELECT * FROM User WHERE userId = ?", (userId,))
-        userData = cur.fetchone()
-        userData = dictFactory(cur, userData)
-        return userData
+from user_group import *
 
 class GetUserChatRoom(Resource):
 
@@ -32,7 +25,27 @@ class GetUserChatRoom(Resource):
             msg = "Unable to load user chat rooms"
             return {"error": msg}, 400
 
-        return 0
+class GetGroupChatRoom(Resource):
+
+    def get(self, userId):
+        try:
+            with sqlite3.connect("database.db") as con:
+                cur = con.cursor()
+                cur.execute("SELECT * FROM GroupChat WHERE userId = ?", (userId, ))
+                rows = cur.fetchall()
+                res = []
+                for row in rows:
+                    row = dictFactory(cur, row)
+                    data = getGroup(row["groupId"])
+                    data["roomId"] = row["roomId"]
+                    res.append(data)
+                return res, 200
+
+        except sqlite3.Error as err:
+            print(str(err))
+            msg = "Unable to load user chat rooms"
+            return {"error": msg}, 400
+
 
 class GetChatMessages(Resource):
 
