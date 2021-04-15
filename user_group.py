@@ -4,6 +4,8 @@ import sqlite3
 import json
 from chat import *
 from util import *
+from datetime import date, datetime
+from pytz import timezone
 
 class GetGroupAPI(Resource):
 
@@ -61,17 +63,94 @@ class CreateGroupAPI(Resource):
                             (userId, name, description, categories, logo, json.dumps(partIds)))
                 con.commit()
                 groupId = cur.lastrowid
-
+            
                 temp = con.cursor()
                 temp.execute("INSERT INTO GroupChat (groupId, userId) VALUES (?, ?)", (groupId, userId))
                 for row in partIds:
                     temp.execute("INSERT INTO GroupChat (groupId, userId) VALUES (?, ?)", (groupId, row))
 
                 # TODO: send notifications to participants here, the userIds are in partsId
+                currentDate = datetime.now(timezone('US/Eastern')).strftime('%Y-%m-%d %H:%M:%S')
+                typeOf = "JoinGroupRequest"
+                user = getUser(userId)
+                for row in partIds:
+                     cur.execute("INSERT INTO Notification (recipientId, date, type, groupId, userId, userName, groupName) \
+                                VALUES (?, ?, ?, ?, ?, ?, ?)", 
+                                (row, currentDate, typeOf, groupId, userId, user["fullName"], name))
 
                 return {"msg": "Successfully created a new group", "groupId": groupId}, 200
 
         except sqlite3.Error as err:
             print(str(err))
             msg = "Unable to create a new group"
+            return {"error": msg}, 400
+
+class AddUserToGroupAPI(Resource):
+    def post (self, userId):
+        try:
+            data = request.get_json()
+            name = data["groupId"]
+            with sqlite3.connect("database.db") as con:
+                cur = con.cursor()
+                cur.execute("SELECT * from UserGroup WHERE groupId = ?", (name,))
+                rows = cur.fetchone()                
+                rows = dictFactory(cur, rows)
+                parts = json.loads(rows["participants"])
+                parts.append(userId)
+                # cur.execute("SELECT participants FROM UserGroup WHERE groupId = ?", (name,))
+                # parts = cur.fetchone()
+                # parts.append(userId)
+                cur.execute("UPDATE UserGroup SET participants = ? WHERE groupId = ?", (json.dumps(parts), name))
+                return {"msg": "Successfully added user to group"}, 200
+        except sqlite3.Error as err:
+            print(str(err))
+            msg = "Unable to add user to group"
+            return {"error": msg}, 400
+
+class SendRequestUserJoinGroupAPI(Resource):
+    def post(self, recipientId):
+        try:
+            data = request.get_json()
+            groupId = data["groupId"]
+            userId = data["userId"]
+            currentDate = datetime.now(timezone('US/Eastern')).strftime('%Y-%m-%d %H:%M:%S')
+            user = getUser(userId)
+            #currentDate =str(date.today())
+            Type = "JoinGroupRequest"
+            with sqlite3.connect("database.db") as con:
+                cur = con.cursor()
+                cur.execute("SELECT * FROM UserGroup WHERE groupId = ?", (groupId,))
+                groupData = cur.fetchone()
+                groupData = dictFactory(cur, groupData)
+                cur.execute("INSERT INTO Notification (recipientId, date, type, groupId, userId, userName, groupName) \
+                            VALUES (?, ?, ?, ?, ?, ?, ?)", 
+                            (recipientId, currentDate, Type, groupId, userId, user["fullName"], groupData["name"]))
+                cur.close()
+                return {"msg": "Successfully requested user to group"}, 200
+        except sqlite3.Error as err:
+            print(str(err))
+            msg = "Unable to add user to group"
+            return {"error": msg}, 400
+            
+class SendRequestOwnerGroupAPI(Resource):
+    def post(self):
+        try:
+            data = request.get_json()
+            groupId = data["groupId"]
+            userId = data["userId"]
+            currentDate = datetime.now(timezone('US/Eastern')).strftime('%Y-%m-%d %H:%M:%S')
+            Type = "RequestGroupOwner"
+            with sqlite3.connect("database.db") as con:
+                cur = con.cursor()
+                cur.execute("SELECT ownerId FROM UserGroup WHERE groupId = ?", (groupId,))
+                rows = cur.fetchone()                
+                rows = dictFactory(cur, rows)
+                print(rows)
+                recipientId = rows["ownerId"]
+                cur.execute("INSERT INTO Notification (recipientId, date, type, groupId, userId) VALUES (?,?,?,?,?)", (recipientId, currentDate, Type, groupId, userId))
+                cur.close()
+                return {"msg": "Successfully requested owner to join group"}, 200
+        except sqlite3.Error as err:
+            print(str(err))
+            msg = "Unable to add user to group"
             return {"error": msg}, 400

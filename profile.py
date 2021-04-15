@@ -175,3 +175,43 @@ class ProfileBioAPI(Resource):
             print(str(err))
             msg = "Failed to add bio"
             return msg, 400
+
+class ProfileBadgeAPI(Resource):
+
+    def get(self, userId):
+        rows = {}
+        try:
+            with sqlite3.connect("database.db") as con:
+                cur = con.cursor()
+                cur.execute("SELECT badges from Profile WHERE userId = ?", (userId,))
+                rows = cur.fetchone()
+                if (rows == None):
+                    return {"error": "UserId doesn't exist"}, 400
+                rows = dictFactory(cur, rows)
+                if rows["badges"] != None:
+                    badgeList = json.loads(rows["badges"])
+                else:
+                    badgeList = []
+                return badgeList, 200
+
+        except sqlite3.Error as err:
+            print(str(err))
+            msg = "Unable to get profile with userId " + userId
+            return {"error": msg}, 400
+
+    def post(self, userId):
+        try:
+            data = request.get_json()
+            badges = data["badges"]
+            badges = json.dumps(badges)
+
+            with sqlite3.connect("database.db") as con:
+                cur = con.cursor()
+                cur.execute("UPDATE Profile SET badges = ? WHERE userId = ?", (badges, userId))
+                msg = "Sucessfully added badges to the database"
+                return msg, 200
+
+        except sqlite3.Error as err:
+            print(str(err))
+            msg = "Failed to add tags"
+            return msg, 400

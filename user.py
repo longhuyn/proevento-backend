@@ -59,8 +59,31 @@ class UserDeleteAPI(Resource):
                 con.commit()
                 cur.execute("DELETE FROM Profile Where userId = ?", (userId,))
                 con.commit()
-                cur.execute("DELETE FROM EventNotification Where userId = ?", (userId,))
+                
+                cur.execute("DELETE FROM Notification Where userId = ?", (userId,))
                 con.commit()
+                cur.execute("DELETE FROM UserGroup Where ownerId = ?", (userId,))
+                con.commit()
+                
+                cur.execute("DELETE FROM Notification Where recipientId = ?", (userId,))
+                con.commit()
+                cur.execute("DELETE FROM ChatMessage WHERE userId = ?",(userId,))
+                con.commit()
+                cur.execute("DELETE FROM GroupChat WHERE userId = ?",(userId,))
+                print("Made it")
+                con.commit()
+                cur.execute("SELECT * from UserGroup")
+                rows = cur.fetchall() 
+                for row in rows:               
+                    data = dictFactory(cur, row)
+                    parts = json.loads(data["participants"])
+                    try:
+                        while True:
+                            parts.remove(str(userId))
+                    except ValueError:
+                        pass
+                    cur.execute("UPDATE UserGroup SET participants = ? WHERE groupId = ?", (json.dumps(parts), data["groupId"]))
+                    con.commit()
                 return{"msg": "Successfully deleted user's data"},200
         except sqlite3.Error as err:
             msg = "Unable to edit user's data for userId " + userId

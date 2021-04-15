@@ -23,6 +23,7 @@ CREATE TABLE Event (
   description TEXT NOT NULL,
   tags TEXT NOT NULL,
   participants TEXT,
+  reviews TEXT,
   favorites TEXT,
   type TEXT NOT NULL,
   zoomLink TEXT NOT NULL,
@@ -50,7 +51,8 @@ CREATE TABLE Notification (
   eventName TEXT,
   userId INTEGER,
   userName TEXT,
-  groupId INTEGER
+  groupId INTEGER,
+  groupName TEXT
 );
 
 CREATE TABLE UserGroup (
@@ -108,3 +110,22 @@ INSERT INTO Category (name) VALUES ("food");
 INSERT INTO Category (name) VALUES ("environment");
 INSERT INTO Category (name) VALUES ("relationships");
 INSERT INTO Category (name) VALUES ("anime");
+INSERT INTO Category (name) VALUES ("comedy");
+INSERT INTO Category (name) VALUES ("culture");
+INSERT INTO Category (name) VALUES ("18+");
+
+CREATE TABLE Badges (
+  badgeId INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL
+);
+
+INSERT INTO Badges (name) VALUES ("Entertaining");
+INSERT INTO Badges (name) VALUES ("On Time");
+INSERT INTO Badges (name) VALUES ("Informative");
+INSERT INTO Badges (name) VALUES ("Life Changing");
+INSERT INTO Badges (name) VALUES ("Trash");
+INSERT INTO Badges (name) VALUES ("Amazing");
+INSERT INTO Badges (name) VALUES ("Must Watch");
+INSERT INTO Badges (name) VALUES ("Visionary");
+INSERT INTO Badges (name) VALUES ("Waste of Time");
+INSERT INTO Badges (name) VALUES ("Lovely");

@@ -155,10 +155,12 @@ class AddParticipantAPI(Resource):
                 cur = con.cursor()
                 cur.execute("SELECT * FROM Event WHERE eventId = ?", (eventId,))
                 rows = cur.fetchone()
-                oldParticipants = rows["participants"]
+                oldParticipants = json.loads(rows["participants"])
+                oldParticipants.append(userId)
                 oldNumParticipate = rows["numParticipate"]
-                cur.execute("UPDATE Event SET participants = ? WHERE eventId = ?", (oldParticipants + "userId,", eventId))
-                cur.execute("UPDATE Event SET numParticipate = ? WHERE eventId = ?", (oldNumParticipate + 1, eventId))    
+                cur.execute("UPDATE Event SET participants = ? WHERE eventId = ?", (json.dumps(oldParticipants), eventId))
+                cur.execute("UPDATE Event SET numParticipate = ? WHERE eventId = ?", (oldNumParticipate + 1, eventId))   
+                cur.close() 
                 return {"msg": "Successfully added participant"}, 200
 
         except sqlite3.Error as err:
@@ -180,4 +182,44 @@ class TopTenAPI(Resource):
         except sqlite3.Error as err:
             print(str(err))
             msg = "Server Error"
+            return {"error": msg}, 400
+
+class EventReviewAPI(Resource):
+    def get(self, eventId):
+        try:
+            with sqlite3.connect("database.db") as con:
+                cur = con.cursor()
+                cur.execute("SELECT * from Event WHERE eventId = ?", (eventId,))
+                rows = cur.fetchone()
+                if (rows == None):
+                    return {"error": "eventId does not exist"}
+                rows = dictFactory(cur, rows)
+                
+                
+                #results = []
+                if rows["reviews"] != None:
+                    reviewList = json.loads(rows["reviews"]) #not working json object must be a str to use loads
+                else:
+                    reviewList = []
+                return reviewList, 200
+
+        except sqlite3.Error as err:
+            print(str(err))
+            msg = "Unable to get event with id " + eventId
+            return {"error": msg}
+
+    def post(self, eventId):
+        try:
+            data = request.get_json()
+            reviews = data['reviews']
+            reviews = json.dumps(reviews)
+
+            with sqlite3.connect("database.db") as con:
+                cur = con.cursor()
+                cur.execute("UPDATE Event SET reviews = ? WHERE eventId = ?", (reviews, eventId))
+                msg = "Successfully added reviews"
+                return msg, 200
+        except sqlite3.Error as err:
+            print(str(err))
+            msg = "Unable to add review"
             return {"error": msg}, 400
