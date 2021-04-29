@@ -5,12 +5,14 @@ import json
 from util import *
 
 class checkFollowAPI(Resource):
-    def get(self, userId):
+    def post(self, userId):
+        print(request.get_json())
         data = request.get_json()
+        print(data)
         idToCheck = data["idToCheck"]
         try:
             with sqlite3.connect("database.db") as con:
-                cur - con.cursor()
+                cur = con.cursor()
                 cur.execute(
                         "SELECT followers from Profile WHERE userId = ?", (idToCheck,))
                 con.commit()
@@ -24,8 +26,9 @@ class checkFollowAPI(Resource):
                 if (rows == None):
                     return "userId doesn't exist", 400
                 
-                for user in result:
-                    if userId in user["followers"].values():
+                for user in results:
+                    print(user["followers"])
+                    if userId in user["followers"]:
                         return "true", 200
                 return "false", 200
         except sqlite3.Error as err:

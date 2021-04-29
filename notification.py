@@ -27,8 +27,10 @@ class getNotificationsAPI(Resource):
 
 class FollowNotificationAPI(Resource):
 
-	def post(self, userId, recipientId):
+	def post(self, recipientId):
 		try:
+			data = request.get_json()
+			userId = data['userId']
 			date = datetime.now(timezone('US/Eastern')).strftime('%Y-%m-%d %H:%M:%S')
 			Type = "FOLLOW"
 			# date = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
@@ -38,8 +40,9 @@ class FollowNotificationAPI(Resource):
 				cur.execute("SELECT * FROM User WHERE userId = ?", (userId,))
 				user = cur.fetchone()
 				user = dictFactory(cur, user)
+				userName = user["fullName"]
 				cur.execute("INSERT INTO Notification (recipientId, type, date, userId, userName) \
-							VALUES (?,?,?,?,?)", (recipientId, Type, date, userId, user["fullName"]))
+							VALUES (?,?,?,?,?)", (recipientId, Type, date, userId, userName))
 				con.commit()
 				cur.close()
 				return {"msg": "Successfully created a follow notification"}, 200
@@ -109,7 +112,8 @@ class CancelNotificationAPI(Resource):
 				cur = con.cursor()
 				cur.execute("SELECT * FROM Event WHERE eventId = ?", (eventId,))
 				rows = cur.fetchone()
-				eventName = rows["eventName"]
+				print(rows)
+				eventName = rows[1]
 				if (rows == None):
 					return {"error": "eventId doesn't exist"}, 400
 				else:
@@ -120,19 +124,20 @@ class CancelNotificationAPI(Resource):
 					for user in participants:
 						cancelNotification(user, eventName)
 					cur.execute("DELETE FROM Event WHERE eventId = ?", (eventId,))
+					cur.execute("DELETE FROM Notification WHERE eventId = ?", (eventId,))
 
 		except sqlite3.Error as err:
 			print(str(err))
 			msg = "Error in deleting event"
 			return {"error": msg}, 400
 
-	def cancelNotification(recipient, eventName):
-	    date = datetime.now(timezone('US/Eastern')).strftime('%Y-%m-%d %H:%M:%S')
-	    Type = "CANCEL"
-	    # date = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
-	    print(date)
-	    with sqlite3.connect("database.db") as con:
-		    cur = con.cursor()
-		    cur.execute("INSERT INTO Notification (recipientId, type, date, eventName) VALUES (?,?,?,?)", (recipientId, Type, date, eventName))
-		    con.commit()
-		    cur.close()
+def cancelNotification(recipientId, eventName):
+	date = datetime.now(timezone('US/Eastern')).strftime('%Y-%m-%d %H:%M:%S')
+	Type = "CANCEL"
+	# date = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+	print(date)
+	with sqlite3.connect("database.db") as con:
+		cur = con.cursor()
+		cur.execute("INSERT INTO Notification (recipientId, type, date, eventName) VALUES (?,?,?,?)", (recipientId, Type, date, eventName))
+		con.commit()
+		cur.close()

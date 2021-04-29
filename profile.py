@@ -17,6 +17,7 @@ class ProfileAPI(Resource):
                     return {"error": "UserId doesn't exist"}, 400
                 rows = dictFactory(cur, rows)
                 rows["tags"] = json.loads(rows["tags"])
+                print(rows["followers"])
                 rows["followers"] = json.loads(rows["followers"])
                 rows["following"] = json.loads(rows["following"])
                 return rows, 200
@@ -49,6 +50,7 @@ class ProfileFollowAPI(Resource):
                     cur.execute("UPDATE Profile SET followers = ? WHERE userId = ?",
                                 (json.dumps(followers), userId))
                     msg = "Sucessfully added a new follower"
+                    print(msg)
 
                     cur = con.cursor()
                     cur.execute("SELECT * from Profile WHERE userId = ?", (followerId,))
@@ -105,12 +107,13 @@ class ProfileFollowAPI(Resource):
                     followers = json.loads(rows["followers"])
                 else:
                     followers = [] 
-
-                if followerId in followers:
-                    followers.remove(followerId)
+                if int(followerId) in followers:
+    
+                    followers.remove(int(followerId))
                     cur.execute("UPDATE Profile SET followers = ? WHERE userId = ?",
                                 (json.dumps(followers), userId))
                     msg = "Sucessfully deleted the follower"
+                    print(msg)
 
                     cur.execute("SELECT * from Profile WHERE userId = ?", (followerId,))
                     rows = cur.fetchone()
@@ -131,6 +134,7 @@ class ProfileFollowAPI(Resource):
                     return msg, 200
                 else:
                     msg = "Follower does not exist in the database!!"
+        
                     return msg, 200
 
         except sqlite3.Error as err:

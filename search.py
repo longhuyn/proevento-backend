@@ -35,6 +35,7 @@ def getEvent(eventId):
                 return {"error": "eventId does not exist"}, 400
             rows = dictFactory(cur, rows)
             rows["tags"] = json.loads(rows["tags"])
+            rows["categories"] = json.loads(rows["categories"])
             rows["participants"] = json.loads(rows["participants"])
             rows["favorites"] = json.loads(rows["favorites"])
             cur.execute("SELECT * FROM User WHERE userId = ?", (rows["userId"],))
@@ -107,6 +108,50 @@ class TagSearchAPI(Resource):
                 results = []
                 for tag in splitText:
                     cur.execute("SELECT * FROM Event WHERE type = 0 AND tags LIKE ?", ("%"+tag+"%",))
+                    con.commit()
+                    rows = cur.fetchall()
+                    if (rows):
+                        for row in rows:
+                            if dictFactory(cur, row) not in results:
+                                results.append(getEvent(row[0]))
+                cur.close()
+                return results, 200
+        except sqlite3.Error as err:
+            print(str(err))
+            msg = "Unable to perform the search"
+            return {"error": msg}, 400
+
+class DescriptionSearchAPI(Resource):
+    def get(self, searchText):
+        try:
+            with sqlite3.connect("database.db") as con:
+                cur = con.cursor()
+                splitText = searchText.split(' ')
+                results = []
+                for word in splitText:
+                    cur.execute("SELECT * FROM Event WHERE type = 0 AND description LIKE ?", ("%"+word+"%",))
+                    con.commit()
+                    rows = cur.fetchall()
+                    if (rows):
+                        for row in rows:
+                            if dictFactory(cur, row) not in results:
+                                results.append(getEvent(row[0]))
+                cur.close()
+                return results, 200
+        except sqlite3.Error as err:
+            print(str(err))
+            msg = "Unable to perform the search"
+            return {"error": msg}, 400
+
+class EventCategorySearchAPI(Resource):
+    def get(self, searchText):
+        try:
+            with sqlite3.connect("database.db") as con:
+                cur = con.cursor()
+                splitText = searchText.split(',')
+                results = []
+                for category in splitText:
+                    cur.execute("SELECT * FROM Event WHERE type = 0 AND categories LIKE ?", ("%"+category+"%",))
                     con.commit()
                     rows = cur.fetchall()
                     if (rows):

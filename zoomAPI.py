@@ -47,5 +47,4 @@ def create_meeting(userID = "me"):
     }
 	r = requests.post("https://api.zoom.us/v2/users/" + str(userID) + "/meetings",data = json.dumps(request_body), headers = headers)
 	information = json.loads(r.text)
-	print(information)
 	return information["join_url"]

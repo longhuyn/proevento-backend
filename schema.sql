@@ -22,6 +22,7 @@ CREATE TABLE Event (
   userId INTEGER NOT NULL,
   description TEXT NOT NULL,
   tags TEXT NOT NULL,
+  categories TEXT NOT NULL,
   participants TEXT,
   reviews TEXT,
   favorites TEXT,
@@ -29,7 +30,9 @@ CREATE TABLE Event (
   zoomLink TEXT NOT NULL,
   eventImage TEXT NOT NULL,
   date TEXT NOT NULL,
-  numParticipate INTEGER NOT NULL
+  numParticipate INTEGER NOT NULL,
+  recorded BOOLEAN,
+  Record TEXT
 );
 
 CREATE TABLE Profile (

@@ -30,7 +30,6 @@ class GetEventAPI(Resource):
 
     def get(self, eventId):
         result = getEvent(eventId)
-        print(result)
         if "error" in result:
             msg = "Unable to get event with id " + eventId
             return {"error": msg}, 400
@@ -48,6 +47,7 @@ def getEvent(eventId):
                 return {"error": "eventId does not exist"}
             rows = dictFactory(cur, rows)
             rows["tags"] = json.loads(rows["tags"])
+            rows["categories"] = json.loads(rows["categories"])
             rows["participants"] = json.loads(rows["participants"])
             rows["favorites"] = json.loads(rows["favorites"])
             cur.execute("SELECT * FROM User WHERE userId = ?", (rows["userId"],))
@@ -70,23 +70,30 @@ class CreateEventAPI(Resource):
             userId = data['userId']
             eventName = data['eventName']
             description = data['description']
-            tags = json.dumps(data['tags'])
+            tags = data["tags"].split(',')
+            for i in range(len(tags)):
+                tags[i] = tags[i].strip()
+            tags = json.dumps(tags) # empty array for tags, modify this for assignment #6
+            categories = json.dumps(data['categories'])
             eventImage = data['eventImage']
             participants = json.dumps(data['participants'])
             favorites = "[]"
             eventType = data["type"]
             date = data['date']
+            recorded = data['recorded']
+            print(recorded)
             # date = datetime.strptime(data['date'], '%Y-%m-%d %H:%M:%S')
-
 
             with sqlite3.connect("database.db") as con:
                 cur = con.cursor()
                 cur.execute("SELECT email from User where userId = ?", (userId,))
                 email = cur.fetchone()[0]
                 joinurl = create_meeting(email)
-                cur.execute("INSERT INTO Event (userId, eventName, description, tags, participants, type, date, zoomLink, favorites, eventImage, numParticipate) \
-                                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", 
-                                (userId, eventName, description, tags, participants, eventType, date, joinurl, favorites, eventImage, 0))
+                cur.execute("INSERT INTO Event (userId, eventName, description, participants, type, date, \
+                            zoomLink, favorites, eventImage, numParticipate, categories, tags, recorded) \
+                                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", 
+                                (userId, eventName, description, participants, eventType, 
+                                date, joinurl, favorites, eventImage, len(data['participants']), categories, tags, recorded))
                 con.commit()
                 eventId = cur.lastrowid
                 cur.close() 
@@ -112,7 +119,19 @@ class GetUserEventsAPI(Resource):
             print(str(err))
             msg = "Unable to create event"
             return {"error": msg}, 400
-
+class EventRecordAPI(Resource):
+    def post(self, eventId):
+        try:
+             data = request.get_json()
+             uploadLink = data["uploadLink"]
+             with sqlite3.connect("database.db") as con:
+                cur = con.cursor()
+                cur.execute("UPDATE Event set Record = ? where eventId = ?", (uploadLink, eventId,))
+                cur.close() 
+                return {"msg": "Successfully created uploaded link"}, 200
+        except sqlite3.Error as err:
+            msg = "Unable to upload link"
+            return {"error": msg}, 400
 class GetAllEventsAPI(Resource):
     def get(self):
         try:

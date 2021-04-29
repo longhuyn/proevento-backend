@@ -58,23 +58,21 @@ class CreateGroupAPI(Resource):
                         res = dictFactory(cur, res)
                         partIds.append(res["userId"])
 
+                emptyArr = []
                 cur.execute("INSERT INTO UserGroup (ownerId, name, description, categories, logo, participants) \
                             VALUES (?, ?, ?, ?, ?, ?)", 
-                            (userId, name, description, categories, logo, json.dumps(partIds)))
+                            (userId, name, description, categories, logo, json.dumps(emptyArr)))
                 con.commit()
                 groupId = cur.lastrowid
-            
-                temp = con.cursor()
-                temp.execute("INSERT INTO GroupChat (groupId, userId) VALUES (?, ?)", (groupId, userId))
-                for row in partIds:
-                    temp.execute("INSERT INTO GroupChat (groupId, userId) VALUES (?, ?)", (groupId, row))
 
-                # TODO: send notifications to participants here, the userIds are in partsId
+                cur.execute("INSERT INTO GroupChat (groupId, userId) VALUES (?, ?)", (groupId, userId))
+                con.commit()
+
                 currentDate = datetime.now(timezone('US/Eastern')).strftime('%Y-%m-%d %H:%M:%S')
                 typeOf = "JoinGroupRequest"
                 user = getUser(userId)
                 for row in partIds:
-                     cur.execute("INSERT INTO Notification (recipientId, date, type, groupId, userId, userName, groupName) \
+                    cur.execute("INSERT INTO Notification (recipientId, date, type, groupId, userId, userName, groupName) \
                                 VALUES (?, ?, ?, ?, ?, ?, ?)", 
                                 (row, currentDate, typeOf, groupId, userId, user["fullName"], name))
 
@@ -89,10 +87,10 @@ class AddUserToGroupAPI(Resource):
     def post (self, userId):
         try:
             data = request.get_json()
-            name = data["groupId"]
+            groupId = data["groupId"]
             with sqlite3.connect("database.db") as con:
                 cur = con.cursor()
-                cur.execute("SELECT * from UserGroup WHERE groupId = ?", (name,))
+                cur.execute("SELECT * from UserGroup WHERE groupId = ?", (groupId,))
                 rows = cur.fetchone()                
                 rows = dictFactory(cur, rows)
                 parts = json.loads(rows["participants"])
@@ -100,7 +98,8 @@ class AddUserToGroupAPI(Resource):
                 # cur.execute("SELECT participants FROM UserGroup WHERE groupId = ?", (name,))
                 # parts = cur.fetchone()
                 # parts.append(userId)
-                cur.execute("UPDATE UserGroup SET participants = ? WHERE groupId = ?", (json.dumps(parts), name))
+                cur.execute("UPDATE UserGroup SET participants = ? WHERE groupId = ?", (json.dumps(parts), groupId))
+                addUserToGroupChat(con, groupId, userId)
                 return {"msg": "Successfully added user to group"}, 200
         except sqlite3.Error as err:
             print(str(err))
@@ -145,12 +144,28 @@ class SendRequestOwnerGroupAPI(Resource):
                 cur.execute("SELECT ownerId FROM UserGroup WHERE groupId = ?", (groupId,))
                 rows = cur.fetchone()                
                 rows = dictFactory(cur, rows)
-                print(rows)
                 recipientId = rows["ownerId"]
-                cur.execute("INSERT INTO Notification (recipientId, date, type, groupId, userId) VALUES (?,?,?,?,?)", (recipientId, currentDate, Type, groupId, userId))
+                recipient = getUser(userId)
+
+                cur.execute("SELECT * FROM UserGroup WHERE groupId = ?", (groupId,))
+                groupData = cur.fetchone()
+                groupData = dictFactory(cur, groupData)
+                cur.execute("INSERT INTO Notification (recipientId, date, type, groupId, userId, userName, groupName) \
+                            VALUES (?,?,?,?,?,?,?)", 
+                            (recipientId, currentDate, Type, groupId, userId, recipient["fullName"], groupData["name"]))
+                
                 cur.close()
                 return {"msg": "Successfully requested owner to join group"}, 200
         except sqlite3.Error as err:
             print(str(err))
             msg = "Unable to add user to group"
             return {"error": msg}, 400
+
+def addUserToGroupChat(con, groupId, userId):
+    try:
+        cur = con.cursor()
+        cur.execute("INSERT INTO GroupChat (groupId, userId) VALUES (?, ?)", (groupId, userId))
+        con.commit()
+    except sqlite3.Error as err:
+        print(str(err))
+        msg = "Unable to add user to group chat"

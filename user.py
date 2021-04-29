@@ -72,18 +72,49 @@ class UserDeleteAPI(Resource):
                 cur.execute("DELETE FROM GroupChat WHERE userId = ?",(userId,))
                 print("Made it")
                 con.commit()
+                cur.execute("Select userId from User")
+                rows = cur.fetchall()
+                for row in rows:
+                    for personFollowing in row:
+                        cur.execute(
+                            "SELECT * from Profile WHERE userId = ?", (personFollowing,))
+                        rows = cur.fetchone()
+                        rows = dictFactory(cur, rows)
+                        followers = json.loads(rows["followers"])
+                        following = json.loads(rows["following"])
+                        print(followers)
+                        print(following)
+                        print(type(userId))
+                        print(type(followers))
+                        if int(userId) in followers:
+                            followers.remove(int(userId))
+                            cur.execute("UPDATE Profile SET followers = ? WHERE userId = ?",
+                                        (json.dumps(followers), personFollowing))
+                            msg = "Sucessfully deleted from follower list"
+                            print(msg)
+                        if userId in following:
+                            following.remove(userId)
+                            cur.execute("UPDATE Profile SET following = ? WHERE userId = ?",
+                                        (json.dumps(following), personFollowing))
+                            msg = "Sucessfully deleted from following list"
+                            print(msg)
                 cur.execute("SELECT * from UserGroup")
                 rows = cur.fetchall() 
-                for row in rows:               
-                    data = dictFactory(cur, row)
-                    parts = json.loads(data["participants"])
-                    try:
-                        while True:
-                            parts.remove(str(userId))
-                    except ValueError:
-                        pass
-                    cur.execute("UPDATE UserGroup SET participants = ? WHERE groupId = ?", (json.dumps(parts), data["groupId"]))
-                    con.commit()
+               
+                if(rows!= None):
+                    for row in rows:               
+                        data = dictFactory(cur, row)
+                        print(data)
+                        parts = json.loads(data["participants"])
+                        print(parts)
+                        if len(parts)>0:
+                            try:
+                                while True:
+                                    parts.remove(str(userId))
+                            except ValueError:
+                                pass
+                            cur.execute("UPDATE UserGroup SET participants = ? WHERE groupId = ?", (json.dumps(parts), data["groupId"]))
+                            con.commit()
                 return{"msg": "Successfully deleted user's data"},200
         except sqlite3.Error as err:
             msg = "Unable to edit user's data for userId " + userId
