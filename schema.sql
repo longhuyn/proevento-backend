@@ -55,7 +55,8 @@ CREATE TABLE Notification (
   userId INTEGER,
   userName TEXT,
   groupId INTEGER,
-  groupName TEXT
+  groupName TEXT,
+  uploadLink TEXT
 );
 
 CREATE TABLE UserGroup (

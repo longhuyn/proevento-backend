@@ -88,9 +88,6 @@ def createEventNotification(recipientId, eventId, eventName, userId):
 		cur.execute("SELECT * FROM Event WHERE eventId = ?", (eventId,))
 		row = cur.fetchone()
 		row = dictFactory(cur, row)
-		participants = json.loads(row["participants"])
-		participants.append(recipientId)
-		cur.execute("UPDATE Event SET participants = ? WHERE eventId = ?", (json.dumps(participants), eventId))
 		cur.close()
 		
 class DeleteRequestNotificationAPI(Resource):

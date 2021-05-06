@@ -43,6 +43,7 @@ api.add_resource(AddParticipantAPI, '/event/<userId>')
 api.add_resource(TopTenAPI, '/event/topten')
 api.add_resource(EventReviewAPI, '/event/review/<eventId>')
 api.add_resource(EventRecordAPI, '/event/recording/<eventId>')
+api.add_resource(FavoriteAPI, '/event/favorite/<eventId>')
 
 # Notification APIS
 api.add_resource(getNotificationsAPI, '/notification/<recipientId>')

@@ -76,19 +76,28 @@ class CreateEventAPI(Resource):
             tags = json.dumps(tags) # empty array for tags, modify this for assignment #6
             categories = json.dumps(data['categories'])
             eventImage = data['eventImage']
-            participants = json.dumps(data['participants'])
+            participantsEmails = data['participants']
+            participants = []
+
             favorites = "[]"
             eventType = data["type"]
             date = data['date']
             recorded = data['recorded']
-            print(recorded)
             # date = datetime.strptime(data['date'], '%Y-%m-%d %H:%M:%S')
 
             with sqlite3.connect("database.db") as con:
                 cur = con.cursor()
+                for email in participantsEmails:
+                    cur.execute("SELECT userId from User where email = ?", (email,))
+                    temp = cur.fetchone()
+                    if temp:
+                        participants.append(temp[0])
+                con.commit()
                 cur.execute("SELECT email from User where userId = ?", (userId,))
                 email = cur.fetchone()[0]
                 joinurl = create_meeting(email)
+                participants = json.dumps(participants)
+                
                 cur.execute("INSERT INTO Event (userId, eventName, description, participants, type, date, \
                             zoomLink, favorites, eventImage, numParticipate, categories, tags, recorded) \
                                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", 
@@ -124,12 +133,25 @@ class EventRecordAPI(Resource):
         try:
              data = request.get_json()
              uploadLink = data["uploadLink"]
+             userId = data["userId"]
+             eventName = data["eventName"]
+             
+             participants = data["participants"]
+             print(participants)
+             Type = "RECORD"
+             recorded = False
+             date = datetime.now(timezone('US/Eastern')).strftime('%Y-%m-%d %H:%M:%S')
              with sqlite3.connect("database.db") as con:
                 cur = con.cursor()
                 cur.execute("UPDATE Event set Record = ? where eventId = ?", (uploadLink, eventId,))
+                cur.execute("UPDATE Event set Recorded = ? where eventId = ?", (recorded, eventId,))
+                for recipientId in participants:
+                    cur.execute("INSERT INTO Notification (recipientId, type, date, eventId, eventName, userId, uploadLink) VALUES (?,?,?,?,?,?,?)", (recipientId, Type, date, eventId, eventName, userId, uploadLink))
                 cur.close() 
+
                 return {"msg": "Successfully created uploaded link"}, 200
         except sqlite3.Error as err:
+            print(str(err))
             msg = "Unable to upload link"
             return {"error": msg}, 400
 class GetAllEventsAPI(Resource):
@@ -242,3 +264,95 @@ class EventReviewAPI(Resource):
             print(str(err))
             msg = "Unable to add review"
             return {"error": msg}, 400
+
+class FavoriteAPI(Resource):
+    def patch(self, eventId):
+        try:
+            data = request.get_json()
+            favoriterId = data['favoriterId']
+
+            with sqlite3.connect("database.db") as con:
+                cur = con.cursor()
+                cur.execute(
+                    "SELECT * from Event WHERE eventId = ?", (eventId,))
+                rows = cur.fetchone()
+                if (rows == None):
+                    return {"error": "eventId doesn't exist"}, 400
+                rows = dictFactory(cur, rows)
+
+                favorites = json.loads(rows["favorites"])
+                if favoriterId in favorites:
+                    return "true", 200
+                else:
+                    return "false", 200
+
+        except sqlite3.Error as err:
+            print(str(err))
+            msg = "Unable to check favorite"
+            return msg, 400
+
+    def post(self, eventId):
+        try:
+            data = request.get_json()
+            favoriterId = data['favoriterId']
+
+            with sqlite3.connect("database.db") as con:
+                cur = con.cursor()
+                cur.execute(
+                    "SELECT * from Event WHERE eventId = ?", (eventId,))
+                rows = cur.fetchone()
+                if (rows == None):
+                    return {"error": "UserId doesn't exist"}, 400
+                rows = dictFactory(cur, rows)
+
+                favorites = json.loads(rows["favorites"])
+                if favoriterId not in favorites:
+                    favorites.append(favoriterId)
+                    cur.execute("UPDATE Event SET favorites = ? WHERE eventId = ?",
+                                (json.dumps(favorites), eventId))
+                    msg = "Sucessfully added a new favorite"
+                    print(msg)   
+                    return {"msg" :msg}, 200
+
+                else:
+                    msg = "Favoriter already exists in the database"
+                    return {"error" :msg}, 400
+
+        except sqlite3.Error as err:
+            print(str(err))
+            msg = "Unable to add new favoriter"
+            return msg, 400
+
+    def put(self, eventId):
+        try:
+            data = request.get_json(force=True)
+            favoriterId = data['favoriterId']
+            msg = ""
+            with sqlite3.connect("database.db") as con:
+                cur = con.cursor()
+                cur.execute(
+                    "SELECT * from Event WHERE eventId = ?", (eventId,))
+                rows = cur.fetchone()
+                if (rows == None):
+                    return {"error": "UserId doesn't exist"}, 400
+                rows = dictFactory(cur, rows)
+
+                if rows["favorites"] != None:
+                    favorites = json.loads(rows["favorites"])
+                else:
+                    favorites = [] 
+                if favoriterId in favorites:
+                    favorites.remove(favoriterId)
+                    cur.execute("UPDATE Event SET favorites = ? WHERE eventId = ?",
+                                (json.dumps(favorites), eventId))
+                    msg = "Sucessfully deleted the favorite"
+                    print(msg)
+                    return msg, 200
+                else:
+                    msg = "Favoriter does not exist in the database!!"
+                    return msg, 400
+
+        except sqlite3.Error as err:
+            print(str(err))
+            msg = "Unable to delete a favorite"
+            return msg, 400

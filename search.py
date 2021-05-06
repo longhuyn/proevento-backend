@@ -18,6 +18,18 @@ class EventSearchAPI(Resource):
                 if (rows):
                     for row in rows:
                         results.append(getEvent(row[0]))
+
+                splitText = searchText.split(' ')
+                for word in splitText:
+                    cur.execute("SELECT * FROM Event WHERE type = 0 AND description LIKE ?", ("%"+word+"%",))
+                    con.commit()
+                    rows = cur.fetchall()
+                    if (rows):
+                        for row in rows:
+                            if dictFactory(cur, row) not in results:
+                                if getEvent(row[0]) not in results:
+                                    results.append(getEvent(row[0]))
+                cur.close()
                 return results, 200
                 
         except sqlite3.Error as err:
