@@ -5,7 +5,9 @@ DROP TABLE IF EXISTS Notification;
 DROP TABLE IF EXISTS ChatRoom;
 DROP TABLE IF EXISTS ChatMessage;
 DROP TABLE IF EXISTS UserGroup;
+DROP TABLE IF EXISTS GroupSuggestion;
 DROP TABLE IF EXISTS Category;
+DROP TABLE IF EXISTS Badges;
 
 CREATE TABLE User (
   userId INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -66,7 +68,19 @@ CREATE TABLE UserGroup (
   logo TEXT,
   description NOT NULL,
   categories TEXT,
-  participants TEXT
+  participants TEXT,
+  suggestionDate TEXT
+);
+
+CREATE TABLE GroupSuggestion (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  date TEXT NOT NULL,
+  description TEXT,
+  userId INTEGER NOT NULL,
+  groupId Integer NOT NULL,
+  status TEXT,
+  voters TEXT
 );
 
 CREATE TABLE UserChat (

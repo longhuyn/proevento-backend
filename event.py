@@ -235,11 +235,10 @@ class EventReviewAPI(Resource):
                 if (rows == None):
                     return {"error": "eventId does not exist"}
                 rows = dictFactory(cur, rows)
-                
-                
+                   
                 #results = []
                 if rows["reviews"] != None:
-                    reviewList = json.loads(rows["reviews"]) #not working json object must be a str to use loads
+                    reviewList = json.loads(rows["reviews"])
                 else:
                     reviewList = []
                 return reviewList, 200

@@ -72,6 +72,14 @@ api.add_resource(GetAllGroupsAPI, '/group/all')
 api.add_resource(AddUserToGroupAPI, '/group/add/<userId>')
 api.add_resource(SendRequestUserJoinGroupAPI, '/group/request/<recipientId>')
 api.add_resource(SendRequestOwnerGroupAPI, '/group/request/owner')
+api.add_resource(SetSuggestionEndDateAPI, '/group/setDate')
+api.add_resource(GetSuggestionStats, '/group/stats/<groupId>')
+
+# Group Suggestion APIS
+api.add_resource(CreateGroupSuggestion, '/group/suggestion/create')
+api.add_resource(GetSuggestionsForGroup, '/group/suggestion/<groupId>')
+api.add_resource(SuggestionVote, '/group/suggestion/vote/<id>')
+
 # Chat APIS
 api.add_resource(GetUserChatRoom, '/chat/user_chat/<userId>')
 api.add_resource(GetGroupChatRoom, '/chat/group_chat/<userId>')

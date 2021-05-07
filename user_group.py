@@ -169,3 +169,149 @@ def addUserToGroupChat(con, groupId, userId):
     except sqlite3.Error as err:
         print(str(err))
         msg = "Unable to add user to group chat"
+
+class CreateGroupSuggestion(Resource):
+
+    def post(self):
+        try:
+            data = request.get_json()
+            name = data["name"]
+            date = data["date"]
+            description = data["description"]
+            userId = data["userId"]
+            groupId = data["groupId"]
+
+            with sqlite3.connect("database.db") as con:
+                cur = con.cursor()
+                cur.execute("INSERT INTO GroupSuggestion (name, date, description, userId, groupId) \
+                            VALUES (?, ?, ?, ?, ?)", (name, date, description, userId, groupId))
+                con.commit()
+                return {"msg": "Successfully added new suggestion"}, 200
+
+        except sqlite3.Error as err:
+            print(str(err))
+            msg = "Unable to add new suggestion"
+
+class GetSuggestionsForGroup(Resource):
+
+    def get(self, groupId):
+        try:
+            with sqlite3.connect("database.db") as con:
+                cur = con.cursor()
+                cur.execute("SELECT * FROM GroupSuggestion WHERE groupId = ?", (groupId,))
+                rows = cur.fetchall()
+                res = []
+                for row in rows:
+                    row = dictFactory(cur, row)
+                    row["user"] = getUser(row["userId"])
+                    res.append(row)
+                return res, 200
+
+        except sqlite3.Error as err:
+            print(str(err))
+            msg = "Unable to add new suggestion"
+
+
+class GetSuggestionStats(Resource):
+
+    def get(self, groupId):
+        try:
+            with sqlite3.connect("database.db") as con:
+                dateCheck = datetime.datetime.today() - datetime.timedelta(days=183)
+                cur = con.cursor()
+                cur.execute("SELECT * FROM GroupSuggestion WHERE groupId = ?", (groupId,))
+                rows = cur.fetchall()
+                res = []
+                for row in rows:
+                    if row["date"] <= dateCheck:
+                        found = False
+                        for x in res:
+                            if x[0] == row["userId"]:
+                                x[1] = x[1] + 1
+                                found = True
+                                break
+                        if found == False:
+                            res.append([row["userId"], 1])
+                return res, 200
+
+        except sqlite3.Error as err:
+            print(str(err))
+            msg = "Unable to fetch statistics"
+
+class SuggestionVote(Resource):
+
+    def get(self, id):
+        try:
+            with sqlite3.connect("database.db") as con:
+                cur = con.cursor()
+                cur.execute(
+                    "SELECT * from GroupSuggestion WHERE id = ?", (id,))
+                rows = cur.fetchone()
+                if (rows == None):
+                    return {"error": "GroupId doesn't exist"}, 400
+                rows = dictFactory(cur, rows)
+
+                if rows["voters"] != None:
+                    voters = json.loads(rows["voters"]) 
+                else:
+                    voters = []
+                return voters, 200
+
+        except sqlite3.Error as err:
+            print(str(err))
+            msg = "Unable to get group"
+            return msg, 400
+
+    def post(self, id):
+        try:
+            data = request.get_json()
+            voterId = data['voterId']
+
+            with sqlite3.connect("database.db") as con:
+                cur = con.cursor()
+                cur.execute(
+                    "SELECT * from GroupSuggestion WHERE id = ?", (id,))
+                rows = cur.fetchone()
+                if (rows == None):
+                    return {"error": "id doesn't exist"}, 400
+                rows = dictFactory(cur, rows)
+                if rows["voters"] != None:
+                    voters = json.loads(rows["voters"]) 
+                else:
+                    voters = []
+
+                if voterId not in voters:
+                    voters.append(voterId)
+                    cur.execute("UPDATE GroupSuggestion SET voters = ? WHERE id = ?",
+                                (json.dumps(voters), id))
+                    msg = "Sucessfully added a new vote"
+                    print(msg)   
+                    return {"msg" :msg}, 200
+                else:
+                    msg = "Voter already exists in the database"
+                    return {"error" :msg}, 400
+
+        except sqlite3.Error as err:
+            print(str(err))
+            msg = "Unable to add new Voter"
+            return msg, 400
+            
+
+class SetSuggestionEndDateAPI(Resource):
+    def post (self):
+        try:
+            data = request.get_json()
+            groupId = data["groupId"]
+            dateText = data["dateText"]
+            with sqlite3.connect("database.db") as con:
+                cur = con.cursor()
+                cur.execute("SELECT * from UserGroup WHERE groupId = ?", (groupId,))
+                rows = cur.fetchone()                
+                rows = dictFactory(cur, rows)
+                cur.execute("UPDATE UserGroup SET suggestionDate = ? WHERE groupId = ?", (dateText, groupId))
+                return {"msg": "Successfully added suggestion end date"}, 200
+
+        except sqlite3.Error as err:
+            print(str(err))
+            msg = "Unable to add suggestion end date"
+            return {"error": msg}, 400
