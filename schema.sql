@@ -3,6 +3,8 @@ DROP TABLE IF EXISTS Profile;
 DROP TABLE IF EXISTS Event;
 DROP TABLE IF EXISTS Notification;
 DROP TABLE IF EXISTS ChatRoom;
+DROP TABLE IF EXISTS UserChat;
+DROP TABLE IF EXISTS GroupChat;
 DROP TABLE IF EXISTS ChatMessage;
 DROP TABLE IF EXISTS UserGroup;
 DROP TABLE IF EXISTS GroupSuggestion;
@@ -77,10 +79,14 @@ CREATE TABLE GroupSuggestion (
   name TEXT NOT NULL,
   date TEXT NOT NULL,
   description TEXT,
+  tags TEXT NOT NULL,
+  categories TEXT NOT NULL,
+  eventImage TEXT,
   userId INTEGER NOT NULL,
   groupId Integer NOT NULL,
   status TEXT,
-  voters TEXT
+  voters TEXT,
+  recorded BOOLEAN
 );
 
 CREATE TABLE UserChat (

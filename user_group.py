@@ -4,7 +4,7 @@ import sqlite3
 import json
 from chat import *
 from util import *
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from pytz import timezone
 
 class GetGroupAPI(Resource):
@@ -180,11 +180,21 @@ class CreateGroupSuggestion(Resource):
             description = data["description"]
             userId = data["userId"]
             groupId = data["groupId"]
+            categories = json.dumps(data["categories"])
+            tags = "[]"
+            if (data["tags"] and len(data["tags"]) > 0):
+                tags = data["tags"].split(',')
+                for i in range(len(tags)):
+                    tags[i] = tags[i].strip()
+                tags = json.dumps(tags)
+            eventImage = data["eventImage"]
+            recorded = data["recorded"]
 
             with sqlite3.connect("database.db") as con:
                 cur = con.cursor()
-                cur.execute("INSERT INTO GroupSuggestion (name, date, description, userId, groupId) \
-                            VALUES (?, ?, ?, ?, ?)", (name, date, description, userId, groupId))
+                cur.execute("INSERT INTO GroupSuggestion (name, date, description, eventImage, userId, groupId, \
+                            categories, tags, recorded, status) VALUES (?, ?, ?, ?, ?, ?, ? ,?, ?, ?)", 
+                            (name, date, description, eventImage, userId, groupId, categories, tags, recorded, "PENDING"))
                 con.commit()
                 return {"msg": "Successfully added new suggestion"}, 200
 
@@ -198,7 +208,7 @@ class GetSuggestionsForGroup(Resource):
         try:
             with sqlite3.connect("database.db") as con:
                 cur = con.cursor()
-                cur.execute("SELECT * FROM GroupSuggestion WHERE groupId = ?", (groupId,))
+                cur.execute("SELECT * FROM GroupSuggestion WHERE groupId = ? AND status = ?", (groupId, "PENDING"))
                 rows = cur.fetchall()
                 res = []
                 for row in rows:
@@ -217,21 +227,35 @@ class GetSuggestionStats(Resource):
     def get(self, groupId):
         try:
             with sqlite3.connect("database.db") as con:
-                dateCheck = datetime.datetime.today() - datetime.timedelta(days=183)
+                
+                dateCheck = datetime.now(timezone('US/Eastern')) - timedelta(days=183)
                 cur = con.cursor()
-                cur.execute("SELECT * FROM GroupSuggestion WHERE groupId = ?", (groupId,))
+                # cur.execute("SELECT * FROM GroupSuggestion WHERE groupId = ?", (groupId,))
+                # rows = cur.fetchall()
+                cur.execute("SELECT * FROM GroupSuggestion WHERE groupId = ? AND status = ?", (groupId, "CREATED",))
                 rows = cur.fetchall()
+                stats = {}
                 res = []
                 for row in rows:
-                    if row["date"] <= dateCheck:
-                        found = False
-                        for x in res:
-                            if x[0] == row["userId"]:
-                                x[1] = x[1] + 1
-                                found = True
-                                break
-                        if found == False:
-                            res.append([row["userId"], 1])
+                    row = dictFactory(cur, row)
+                    tempDate = row["date"][:len(row["date"]) - 6]
+                    eventDate = datetime.strptime(tempDate, '%Y-%m-%d')
+                    if eventDate.timestamp() >= dateCheck.timestamp():
+                        print("yo", row["userId"])
+                        if row["userId"] not in stats:
+                            stats[row["userId"]] = 1
+                        else:
+                            stats[row["userId"]] += 1
+                        # found = False
+                        # for x in stats:
+                        #     if x[0] == row["userId"]:
+                        #         x[1] = x[1] + 1
+                        #         found = True
+                        #         break
+                        # if found == False:
+                        #     stats.append([row["userId"], 1])
+                for key in stats.keys():
+                    res.append({"user": getUser(key), "value": stats[key]})
                 return res, 200
 
         except sqlite3.Error as err:

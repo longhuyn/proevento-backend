@@ -110,6 +110,28 @@ class UserSearchAPI(Resource):
             msg = "Unable to perform the search"
             return {"error": msg}, 400
 
+class TopTenVoicesAPI(Resource):
+
+    def get(self):
+        try:
+            with sqlite3.connect("database.db") as con:
+                cur = con.cursor()
+                cur.execute("SELECT * FROM Profile")
+                con.commit()
+                rows = cur.fetchall()
+                results = []
+                if (rows):
+                    for row in rows:
+                        #row["followers"] = json.loads(row["followers"])
+                        results.append(dictFactory(cur, row))
+                cur.close()
+                return results, 200
+        except sqlite3.Error as err:
+            print(str(err))
+            msg = "Unable to perform get all users"
+            return {"error": msg}, 400
+
+
 class TagSearchAPI(Resource):
 
     def get(self, searchText):

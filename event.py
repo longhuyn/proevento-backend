@@ -9,6 +9,7 @@ from event import *
 from notification import *
 import requests
 import pytz
+import ast
 
 class Event:
     """Event isnt sending the notification that has to be done separately"""
@@ -48,6 +49,7 @@ def getEvent(eventId):
             rows = dictFactory(cur, rows)
             rows["tags"] = json.loads(rows["tags"])
             rows["categories"] = json.loads(rows["categories"])
+            print(json.loads(rows["participants"]))
             rows["participants"] = json.loads(rows["participants"])
             rows["favorites"] = json.loads(rows["favorites"])
             cur.execute("SELECT * FROM User WHERE userId = ?", (rows["userId"],))
@@ -137,6 +139,7 @@ class EventRecordAPI(Resource):
              eventName = data["eventName"]
              
              participants = data["participants"]
+             print("WEEE HJEREE")
              print(participants)
              Type = "RECORD"
              recorded = False
@@ -145,10 +148,17 @@ class EventRecordAPI(Resource):
                 cur = con.cursor()
                 cur.execute("UPDATE Event set Record = ? where eventId = ?", (uploadLink, eventId,))
                 cur.execute("UPDATE Event set Recorded = ? where eventId = ?", (recorded, eventId,))
+                print(participants)
                 for recipientId in participants:
                     cur.execute("INSERT INTO Notification (recipientId, type, date, eventId, eventName, userId, uploadLink) VALUES (?,?,?,?,?,?,?)", (recipientId, Type, date, eventId, eventName, userId, uploadLink))
+               
+                cur.execute("SELECT uploadLink FROM Notification WHERE type = ?",("RECORD",))
+                rows = cur.fetchall()
+                results = []
+                for row in rows:
+                    results.append(dictFactory(cur,row))
+                print(results)
                 cur.close() 
-
                 return {"msg": "Successfully created uploaded link"}, 200
         except sqlite3.Error as err:
             print(str(err))
@@ -201,6 +211,10 @@ class AddParticipantAPI(Resource):
                 oldNumParticipate = rows["numParticipate"]
                 cur.execute("UPDATE Event SET participants = ? WHERE eventId = ?", (json.dumps(oldParticipants), eventId))
                 cur.execute("UPDATE Event SET numParticipate = ? WHERE eventId = ?", (oldNumParticipate + 1, eventId))   
+                cur.execute("SELECT participants FROM Event WHERE eventId =?", (eventId,))
+                rows = cur.fetchall()
+                results = dictFactory(cur,rows)
+                print(results)
                 cur.close() 
                 return {"msg": "Successfully added participant"}, 200
 
@@ -217,7 +231,7 @@ class TopTenAPI(Resource):
                 cur.execute("SELECT * FROM Event ORDER BY numParticipate DESC")
                 rows = cur.fetchall()
                 results = []
-                for x in range(10):
+                for row in rows:
                     results.append(getEvent(row[0]))
                 return results, 200
         except sqlite3.Error as err:

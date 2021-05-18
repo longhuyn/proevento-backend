@@ -194,7 +194,6 @@ def test_user_profile_invalid():
     r = requests.get('http://proevento.tk:3000/profile/999')
     assert r.status_code == 400
 
-
 # Test 19: adding a tag to a user profile
 def test_adding_tag():
     payload = {
